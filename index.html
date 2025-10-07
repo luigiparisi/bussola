@@ -74,9 +74,16 @@
       <!-- Explanation Panel -->
       <div class="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
         <div id="explanation-panel" class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
-          <h2 class="text-3xl font-bold text-cyan-400 mb-4 text-center lg:text-left">
-            Azimuth Corrente
-          </h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-3xl font-bold text-cyan-400">
+              Azimuth Corrente
+            </h2>
+            <button id="reset-button" title="Resetta la bussola" class="p-2 bg-slate-700 hover:bg-slate-600 rounded-full text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-800" aria-label="Resetta bussola">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
           <div class="text-center bg-slate-900 rounded-lg p-6 mb-6">
             <span id="azimuth-display" class="text-6xl font-mono font-bold text-white tracking-wider">45°</span>
           </div>
@@ -114,8 +121,13 @@
 
   <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
+      // --- CONSTANTS ---
+      const COMPASS_SIZE = 350;
+      const COMPASS_RADIUS = COMPASS_SIZE / 2 * 0.8;
+      const INITIAL_AZIMUTH = 0;
+
       // --- STATE ---
-      let azimuth = 45;
+      let azimuth = INITIAL_AZIMUTH;
 
       // --- DOM ELEMENTS ---
       const compassContainer = document.getElementById('compass-container');
@@ -125,10 +137,7 @@
       const azimuthDisplay = document.getElementById('azimuth-display');
       const azimuthText = document.getElementById('azimuth-text');
       const directionText = document.getElementById('direction-text');
-
-      // --- CONSTANTS ---
-      const COMPASS_SIZE = 350;
-      const COMPASS_RADIUS = COMPASS_SIZE / 2 * 0.8;
+      const resetButton = document.getElementById('reset-button');
 
       // --- COMPASS LOGIC ---
       function updateUI() {
@@ -201,6 +210,11 @@
         markingsContainer.innerHTML = markingsHTML;
       }
 
+      function resetCompass() {
+        azimuth = INITIAL_AZIMUTH;
+        updateUI();
+      }
+
       // --- TUTORIAL LOGIC ---
       const tutorialEl = document.getElementById('tutorial');
       const tutorialOverlay = document.getElementById('tutorial-overlay');
@@ -216,6 +230,7 @@
         { targetId: 'compass-container', title: 'La Bussola', content: 'Questa è la bussola. Il Nord (N), contrassegnato in rosso, è il punto di riferimento a 0°. Tutti gli angoli sono misurati da qui.', position: 'right' },
         { targetId: 'compass-target', title: 'Il Bersaglio', content: 'Questo punto rosso è il tuo bersaglio. Puoi cliccare e trascinarlo attorno al centro della bussola.', position: 'right' },
         { targetId: 'explanation-panel', title: "Lettura dell'Azimuth", content: "Questo pannello mostra l'azimuth corrente in gradi e la direzione cardinale corrispondente. Osserva come si aggiorna quando muovi il bersaglio.", position: 'left' },
+        { targetId: 'reset-button', title: 'Resetta la Bussola', content: 'Usa questo pulsante in qualsiasi momento per riportare il bersaglio alla sua posizione iniziale.', position: 'left' },
         { title: 'Tutto Pronto!', content: 'Ora sei pronto/a per esplorare. Trascina il bersaglio e scopri il concetto di azimuth. Buona navigazione!' }
       ];
 
@@ -284,6 +299,7 @@
         renderMarkings();
         compassTarget.addEventListener('mousedown', startDragging);
         compassTarget.addEventListener('touchstart', startDragging, { passive: false });
+        resetButton.addEventListener('click', resetCompass);
         updateUI();
         tutorialEl.classList.remove('hidden');
         showStep(0);
