@@ -6,23 +6,292 @@
     <title>Bussola Interattiva per Azimuth</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      @import url('https://rsms.me/inter/inter.css');
       body {
         font-family: 'Inter', sans-serif;
       }
-      @import url('https://rsms.me/inter/inter.css');
+      #compass-container {
+        touch-action: none; /* Prevents scrolling on mobile while dragging */
+      }
+      #tutorial-overlay {
+        transition: clip-path 0.3s ease-in-out;
+      }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
-  }
-}
-</script>
 </head>
 <body class="bg-slate-900 text-white">
-  <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
+
+  <div class="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center p-4 sm:p-6 lg:p-8 relative">
+    
+    <!-- Tutorial -->
+    <div id="tutorial" class="fixed inset-0 z-50 hidden">
+      <div id="tutorial-overlay" class="absolute inset-0 bg-black/70" style="clip-path: none; fill-rule: evenodd;"></div>
+      <div id="tutorial-tooltip" class="absolute bg-slate-800 text-white p-6 rounded-lg shadow-2xl border border-slate-700 w-80 max-w-[90vw] transition-all duration-300">
+        <h3 id="tutorial-title" class="text-xl font-bold text-cyan-400 mb-2"></h3>
+        <p id="tutorial-content" class="text-slate-300 mb-4"></p>
+        <div class="flex justify-between items-center">
+          <span id="tutorial-step-counter" class="text-sm text-slate-400"></span>
+          <div class="flex gap-2">
+            <button id="tutorial-prev" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-sm font-semibold transition-colors">Indietro</button>
+            <button id="tutorial-next" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-md text-sm font-semibold transition-colors">Avanti</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="text-center">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
+        <span class="text-cyan-400">Bussola Interattiva</span>: Impara l'Azimuth
+      </h1>
+      <p class="mt-4 max-w-2xl mx-auto text-lg text-slate-400">
+        Scopri cos'è l'azimuth e come viene calcolato. Trascina il bersaglio sulla bussola per vedere come cambia l'angolo dal Nord.
+      </p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="w-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 mt-8">
+      
+      <!-- Compass -->
+      <div class="w-full lg:w-1/2 flex justify-center">
+        <div id="compass-container" class="relative rounded-full bg-slate-800 border-4 border-slate-700 shadow-2xl flex items-center justify-center cursor-default" style="width: 350px; height: 350px;">
+          <div class="absolute w-full h-full rounded-full bg-slate-900" style="transform: scale(0.95)"></div>
+          
+          <div id="markings-container"></div>
+          
+          <span class="absolute top-4 text-2xl font-bold text-red-500">N</span>
+          <span class="absolute bottom-4 text-xl font-semibold text-slate-300">S</span>
+          <span class="absolute left-4 text-xl font-semibold text-slate-300">W</span>
+          <span class="absolute right-4 text-xl font-semibold text-slate-300">E</span>
+          
+          <div class="w-4 h-4 bg-cyan-400 rounded-full border-2 border-slate-900 z-10"></div>
+          
+          <div id="azimuth-line" class="absolute top-1/2 left-1/2 origin-left bg-red-500/50 z-20" style="height: 3px; border-radius: 2px;"></div>
+          
+          <div id="compass-target" class="absolute w-8 h-8 rounded-full bg-red-500 border-4 border-white shadow-lg z-30 cursor-grab active:cursor-grabbing" style="transform: translate(-50%, -50%)"></div>
+        </div>
+      </div>
+
+      <!-- Explanation Panel -->
+      <div class="w-full lg:w-1/2 flex flex-col items-center lg:items-start">
+        <div id="explanation-panel" class="bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-md">
+          <h2 class="text-3xl font-bold text-cyan-400 mb-4 text-center lg:text-left">
+            Azimuth Corrente
+          </h2>
+          <div class="text-center bg-slate-900 rounded-lg p-6 mb-6">
+            <span id="azimuth-display" class="text-6xl font-mono font-bold text-white tracking-wider">45°</span>
+          </div>
+          <div class="space-y-4 text-slate-300">
+            <div>
+              <h3 class="font-semibold text-lg text-white">Cos'è l'Azimuth?</h3>
+              <p class="mt-1">
+                L'azimuth è un angolo di direzione orizzontale misurato in gradi, in senso orario, a partire da un punto di riferimento fisso. In navigazione, questo riferimento è quasi sempre il <strong class="text-red-400">Nord geografico (0°)</strong>.
+              </p>
+            </div>
+            <div>
+              <h3 class="font-semibold text-lg text-white">Interpretazione</h3>
+              <p class="mt-1">
+                Il tuo bersaglio si trova a <strong id="azimuth-text" class="text-cyan-400">45°</strong>.
+                Questo significa che la sua direzione è verso <strong id="direction-text" class="text-cyan-400">Nord-Est</strong>.
+              </p>
+              <ul class="list-disc list-inside mt-2 space-y-1 text-slate-400">
+                <li>Un azimuth di <strong class="text-white">90°</strong> corrisponde a <strong class="text-white">Est</strong>.</li>
+                <li>Un azimuth di <strong class="text-white">180°</strong> corrisponde a <strong class="text-white">Sud</strong>.</li>
+                <li>Un azimuth di <strong class="text-white">270°</strong> corrisponde a <strong class="text-white">Ovest</strong>.</li>
+                <li>Un azimuth di <strong class="text-white">360°</strong> o <strong class="text-white">0°</strong> corrisponde a <strong class="text-white">Nord</strong>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 text-center text-slate-500">
+      <p>Creato per scopi didattici. Trascina il punto rosso per interagire.</p>
+    </footer>
+
+  </div>
+
+  <script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- STATE ---
+      let azimuth = 45;
+
+      // --- DOM ELEMENTS ---
+      const compassContainer = document.getElementById('compass-container');
+      const compassTarget = document.getElementById('compass-target');
+      const azimuthLine = document.getElementById('azimuth-line');
+      const markingsContainer = document.getElementById('markings-container');
+      const azimuthDisplay = document.getElementById('azimuth-display');
+      const azimuthText = document.getElementById('azimuth-text');
+      const directionText = document.getElementById('direction-text');
+
+      // --- CONSTANTS ---
+      const COMPASS_SIZE = 350;
+      const COMPASS_RADIUS = COMPASS_SIZE / 2 * 0.8;
+
+      // --- COMPASS LOGIC ---
+      function updateUI() {
+        const targetAngleRad = (azimuth - 90) * (Math.PI / 180);
+        const targetX = (COMPASS_SIZE / 2) + COMPASS_RADIUS * Math.cos(targetAngleRad);
+        const targetY = (COMPASS_SIZE / 2) + COMPASS_RADIUS * Math.sin(targetAngleRad);
+        
+        compassTarget.style.left = `${targetX}px`;
+        compassTarget.style.top = `${targetY}px`;
+        
+        azimuthLine.style.transform = `rotate(${azimuth - 90}deg)`;
+        azimuthLine.style.width = `${COMPASS_RADIUS}px`;
+
+        azimuthDisplay.textContent = `${azimuth.toFixed(0)}°`;
+        azimuthText.textContent = `${azimuth.toFixed(0)}°`;
+        directionText.textContent = getCardinalDirection(azimuth);
+      }
+
+      function getCardinalDirection(angle) {
+        if (angle > 337.5 || angle <= 22.5) return "Nord";
+        if (angle > 22.5 && angle <= 67.5) return "Nord-Est";
+        if (angle > 67.5 && angle <= 112.5) return "Est";
+        if (angle > 112.5 && angle <= 157.5) return "Sud-Est";
+        if (angle > 157.5 && angle <= 202.5) return "Sud";
+        if (angle > 202.5 && angle <= 247.5) return "Sud-Ovest";
+        if (angle > 247.5 && angle <= 292.5) return "Ovest";
+        if (angle > 292.5 && angle <= 337.5) return "Nord-Ovest";
+        return "";
+      }
+      
+      const handleInteraction = (clientX, clientY) => {
+        const rect = compassContainer.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = clientX - centerX;
+        const deltaY = clientY - centerY;
+        const angleRad = Math.atan2(deltaY, deltaX);
+        const angleDeg = angleRad * (180 / Math.PI);
+        azimuth = (angleDeg + 90 + 360) % 360;
+        updateUI();
+      };
+
+      const handleMouseMove = (e) => handleInteraction(e.clientX, e.clientY);
+      const handleTouchMove = (e) => handleInteraction(e.touches[0].clientX, e.touches[0].clientY);
+
+      const stopDragging = () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', stopDragging);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', stopDragging);
+      };
+
+      const startDragging = (e) => {
+        e.preventDefault();
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', stopDragging);
+        window.addEventListener('touchmove', handleTouchMove);
+        window.addEventListener('touchend', stopDragging);
+      };
+      
+      function renderMarkings() {
+        let markingsHTML = '';
+        for (let i = 0; i < 360; i += 10) {
+          const isCardinal = i % 90 === 0;
+          const isSubCardinal = i % 30 === 0;
+          const length = isCardinal ? 15 : (isSubCardinal ? 10 : 5);
+          const color = isCardinal ? 'white' : 'rgb(100 116 139)';
+          markingsHTML += `<div class="absolute top-1/2 left-1/2 origin-left" style="transform: rotate(${i}deg) translateX(${COMPASS_SIZE/2 - 20}px); width: ${length}px; height: 2px; background-color: ${color};"></div>`;
+        }
+        markingsContainer.innerHTML = markingsHTML;
+      }
+
+      // --- TUTORIAL LOGIC ---
+      const tutorialEl = document.getElementById('tutorial');
+      const tutorialOverlay = document.getElementById('tutorial-overlay');
+      const tooltip = document.getElementById('tutorial-tooltip');
+      const titleEl = document.getElementById('tutorial-title');
+      const contentEl = document.getElementById('tutorial-content');
+      const counterEl = document.getElementById('tutorial-step-counter');
+      const prevBtn = document.getElementById('tutorial-prev');
+      const nextBtn = document.getElementById('tutorial-next');
+      
+      const steps = [
+        { title: 'Benvenuto/a!', content: "Questa guida ti mostrerà come usare la Bussola Interattiva. Premi 'Avanti' per iniziare." },
+        { targetId: 'compass-container', title: 'La Bussola', content: 'Questa è la bussola. Il Nord (N), contrassegnato in rosso, è il punto di riferimento a 0°. Tutti gli angoli sono misurati da qui.', position: 'right' },
+        { targetId: 'compass-target', title: 'Il Bersaglio', content: 'Questo punto rosso è il tuo bersaglio. Puoi cliccare e trascinarlo attorno al centro della bussola.', position: 'right' },
+        { targetId: 'explanation-panel', title: "Lettura dell'Azimuth", content: "Questo pannello mostra l'azimuth corrente in gradi e la direzione cardinale corrispondente. Osserva come si aggiorna quando muovi il bersaglio.", position: 'left' },
+        { title: 'Tutto Pronto!', content: 'Ora sei pronto/a per esplorare. Trascina il bersaglio e scopri il concetto di azimuth. Buona navigazione!' }
+      ];
+
+      let currentStepIndex = 0;
+
+      function showStep(index) {
+        currentStepIndex = index;
+        const step = steps[index];
+        const isFirst = index === 0;
+        const isLast = index === steps.length - 1;
+
+        titleEl.textContent = step.title;
+        contentEl.textContent = step.content;
+        counterEl.textContent = `${index + 1} / ${steps.length}`;
+        
+        prevBtn.style.display = isFirst ? 'none' : 'inline-flex';
+        nextBtn.textContent = isLast ? 'Fine' : 'Avanti';
+
+        const targetEl = step.targetId ? document.getElementById(step.targetId) : null;
+        if (targetEl) {
+          const rect = targetEl.getBoundingClientRect();
+          const spacing = 8;
+          tutorialOverlay.style.clipPath = `path('M0 0 H${window.innerWidth} V${window.innerHeight} H0Z M${rect.x - spacing} ${rect.y - spacing} H${rect.x + rect.width + spacing} V${rect.y + rect.height + spacing} H${rect.x - spacing}Z')`;
+          
+          const tooltipRect = tooltip.getBoundingClientRect();
+          let top = rect.top + rect.height / 2 - tooltipRect.height / 2;
+          let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+          const offset = 20;
+
+          switch(step.position) {
+            case 'top': top = rect.top - tooltipRect.height - offset; break;
+            case 'bottom': top = rect.bottom + offset; break;
+            case 'left': left = rect.left - tooltipRect.width - offset; break;
+            case 'right': left = rect.right + offset; break;
+          }
+          tooltip.style.top = `${top}px`;
+          tooltip.style.left = `${left}px`;
+          tooltip.style.transform = '';
+        } else {
+          tutorialOverlay.style.clipPath = 'none';
+          tooltip.style.top = '50%';
+          tooltip.style.left = '50%';
+          tooltip.style.transform = 'translate(-50%, -50%)';
+        }
+      }
+
+      function finishTutorial() {
+        tutorialEl.classList.add('hidden');
+      }
+
+      nextBtn.addEventListener('click', () => {
+        if (currentStepIndex < steps.length - 1) {
+          showStep(currentStepIndex + 1);
+        } else {
+          finishTutorial();
+        }
+      });
+      
+      prevBtn.addEventListener('click', () => {
+        if (currentStepIndex > 0) {
+          showStep(currentStepIndex - 1);
+        }
+      });
+
+      function init() {
+        renderMarkings();
+        compassTarget.addEventListener('mousedown', startDragging);
+        compassTarget.addEventListener('touchstart', startDragging, { passive: false });
+        updateUI();
+        tutorialEl.classList.remove('hidden');
+        showStep(0);
+      }
+
+      init();
+    });
+  </script>
+
 </body>
 </html>
