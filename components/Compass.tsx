@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface CompassProps {
@@ -98,6 +97,7 @@ const Compass: React.FC<CompassProps> = ({ azimuth, setAzimuth }) => {
 
   return (
     <div
+      id="compass-container"
       ref={compassRef}
       className="relative rounded-full bg-slate-800 border-4 border-slate-700 shadow-2xl flex items-center justify-center cursor-default"
       style={{ width: `${size}px`, height: `${size}px`, touchAction: 'none' }}
@@ -128,6 +128,7 @@ const Compass: React.FC<CompassProps> = ({ azimuth, setAzimuth }) => {
 
       {/* Draggable target */}
       <div
+        id="compass-target"
         className="absolute w-8 h-8 rounded-full bg-red-500 border-4 border-white shadow-lg flex items-center justify-center z-30 cursor-grab active:cursor-grabbing"
         style={{
           left: `${targetX}px`,
