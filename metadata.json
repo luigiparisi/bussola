@@ -1,0 +1,5 @@
+{
+  "name": "Bussola Interattiva per Azimuth",
+  "description": "Un'applicazione web interattiva per aiutare gli utenti a capire come funziona una bussola per calcolare l'azimuth. Trascina il bersaglio per vedere come cambia l'angolo.",
+  "requestFramePermissions": []
+}
